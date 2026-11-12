@@ -1,0 +1,49 @@
+* { box-sizing: border-box; }
+body { margin: 0; font: 14px/1.4 system-ui, sans-serif; color: #111; background: #f3f4f6; }
+button, input { font: inherit; }
+
+.app { display: flex; height: 100vh; }
+
+aside {
+  width: 280px; flex: none; padding: 14px; background: #fff;
+  border-right: 1px solid #e5e7eb; display: flex; flex-direction: column; gap: 8px; overflow: auto;
+}
+aside h1 { font-size: 15px; margin: 0 0 4px; }
+aside input[type='text'], aside input:not([type]) { padding: 6px 8px; border: 1px solid #d1d5db; border-radius: 6px; }
+aside > button, .foot button {
+  padding: 7px 10px; border: 1px solid #d1d5db; border-radius: 6px; background: #fff; cursor: pointer;
+}
+aside > button:disabled, .foot button:disabled { opacity: .45; cursor: default; }
+.file { padding: 7px 10px; border: 1px dashed #9ca3af; border-radius: 6px; text-align: center; cursor: pointer; }
+.file input { display: none; }
+.chk { display: flex; gap: 6px; align-items: center; }
+
+.hits { list-style: none; margin: 0; padding: 0; overflow: auto; flex: 1; min-height: 60px; }
+.hits button {
+  width: 100%; text-align: left; border: 0; background: none; padding: 5px 4px; cursor: pointer;
+  border-bottom: 1px solid #f3f4f6; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.hits button:hover { background: #eff6ff; }
+.hits i { color: #6b7280; }
+.none, .hint { color: #6b7280; }
+.foot { margin-top: auto; display: flex; flex-direction: column; gap: 6px; padding-top: 10px; }
+.foot p { margin: 0; font-size: 12px; }
+
+main { flex: 1; overflow: auto; padding: 20px; display: flex; flex-direction: column; align-items: center; gap: 20px; }
+.empty { color: #6b7280; margin-top: 40px; }
+
+.page { position: relative; box-shadow: 0 1px 6px rgb(0 0 0 / .2); background: #fff; }
+.page canvas { display: block; }
+.layer { position: absolute; inset: 0; }
+
+.tx {
+  position: absolute; white-space: pre; transform-origin: 0 0; color: transparent;
+  font-family: sans-serif; cursor: text; outline: 0; min-width: 4px;
+}
+.tx.hit { background: rgb(250 204 21 / .5); }
+.tx:focus { color: #111; background: #fff; box-shadow: 0 0 0 1px #2563eb; z-index: 2; }
+/* The canvas already shows the edit, so a changed run stays transparent —
+   except in the moment before the re-render lands. */
+.tx.changed { border-bottom: 1px solid rgb(22 163 74 / .55); }
+.tx.changed.pending { color: #111; background: #fff; }
+.tx.failed { color: #111; background: #fee2e2; box-shadow: 0 0 0 1px #dc2626; }
