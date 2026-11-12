@@ -1,18 +1,41 @@
-# PDF editor
+# PDF Editor Free
 
-React + Vite. Open a PDF, click any line to edit it in place, find/replace across
-the whole document, download the result.
+Open a PDF, click any line to edit it in place, find/replace across the whole
+document, download the result. React + Vite, wrapped in Electron so it runs as a
+desktop app. Everything happens on your machine — no upload, no server.
+
+## Download
+
+Installers for macOS, Windows and Linux are attached to each
+[release](https://github.com/abdulsalamdeveloper1999/pdf-editor-free/releases).
+
+They are **not code-signed**. macOS will say the app is from an unidentified
+developer — right-click the app and choose Open the first time. Windows
+SmartScreen will warn — choose More info, then Run anyway.
+
+## Development
 
 ```bash
 npm install
-npm run dev     # http://localhost:5173
+npm run dev     # browser, http://localhost:5173
+npm run app     # the Electron app
 npm test        # find/replace + rewrite-engine checks
+npm run smoke   # boots the real Electron app and opens a PDF in it
+npm run dist    # installers for this machine, into release/
 ```
+
+Cutting a release: `npm version <x.y.z> && git push --follow-tags`. That bumps
+`package.json` (what the installers are named after) and pushes the tag, which
+runs the build on all three platforms and attaches them to a draft release.
 
 Test files: `public/sample.pdf` (prose), `public/table.pdf` (left-aligned
 columns), `public/right-aligned.pdf` (a right-aligned amount column).
 
 ## How it works
+
+The Electron wrapper is thin: `electron/app.cjs` serves the ordinary Vite build
+over a custom `app://` scheme (ES modules are blocked on `file://` origins) and
+opens a window. There is no IPC and no Node access in the renderer.
 
 - **pdf.js** renders each page to a canvas and reports where every text run sits.
   Those runs are laid over the canvas as `contentEditable` spans — transparent

@@ -229,7 +229,7 @@ export default function App() {
   return (
     <div className="app">
       <aside>
-        <h1>PDF editor</h1>
+        <h1>PDF Editor Free</h1>
         <label className="file">
           Open PDF
           <input
