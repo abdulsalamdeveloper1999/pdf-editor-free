@@ -34,12 +34,15 @@ jobs:
       - name: Smoke test
         if: matrix.os != 'ubuntu-latest'
         run: npx electron electron/smoke.cjs
-      # Linux runners ship Electron's chrome-sandbox without the setuid bit, and
-      # Chromium refuses to start rather than run unsandboxed. Fix the binary
-      # instead of passing --no-sandbox, so the test boots the way users do.
+      # Electron fetches its binary on first use, not during `npm ci`, so pull
+      # it down before touching chrome-sandbox. Linux runners leave that helper
+      # without its setuid bit and Chromium refuses to start rather than run
+      # unsandboxed; fix the binary instead of passing --no-sandbox, so the test
+      # boots the way users do.
       - name: Smoke test (xvfb)
         if: matrix.os == 'ubuntu-latest'
         run: |
+          node node_modules/electron/install.js
           sudo chown root:root node_modules/electron/dist/chrome-sandbox
           sudo chmod 4755 node_modules/electron/dist/chrome-sandbox
           xvfb-run --auto-servernum npx electron electron/smoke.cjs
