@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { PDFDocument, PDFDict, PDFName, StandardFonts, decodePDFRawStream } from 'pdf-lib';
+import { PDFDocument, PDFDict, PDFName, PDFString, StandardFonts, decodePDFRawStream } from 'pdf-lib';
 import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.mjs';
 import { applyEdits } from './rewrite.js';
 
@@ -185,4 +185,51 @@ test('a value with no room left is squeezed, not spilled', async () => {
   assert.ok(Math.abs(run.transform[4] + run.width - right) < 1, 'still ends at the column edge');
   assert.ok(/ Tz\b/.test(ops), 'squeezed rather than spilled past the column');
   assert.equal(+Math.hypot(run.transform[2], run.transform[3]).toFixed(1), 12, 'size untouched');
+});
+
+// A Form XObject carrying its own /F1 that is NOT the page's /F1. If the font
+// map cache is keyed on the name alone, the XObject's text gets encoded with
+// the page font's character codes and is silently written wrong.
+test('does not reuse the page font for a Form XObject of the same name', async () => {
+  const doc = await PDFDocument.create();
+  const page = doc.addPage([300, 120]);
+  const ctx = doc.context;
+  const helv = await doc.embedFont(StandardFonts.Helvetica);
+
+  // a CID font with no ToUnicode — deliberately one the engine must refuse
+  const cid = ctx.obj({
+    Type: 'Font', Subtype: 'CIDFontType2', BaseFont: 'NoMap',
+    CIDSystemInfo: ctx.obj({ Registry: PDFString.of('Adobe'), Ordering: PDFString.of('Identity'), Supplement: 0 }),
+  });
+  const unusable = ctx.register(ctx.obj({
+    Type: 'Font', Subtype: 'Type0', BaseFont: 'NoMap', Encoding: 'Identity-H',
+    DescendantFonts: ctx.obj([ctx.register(cid)]),
+  }));
+
+  const bytes = (s) => Uint8Array.from(s, (c) => c.charCodeAt(0));
+  const form = ctx.register(ctx.flateStream(bytes('BT /F1 12 Tf 20 30 Td (FORM) Tj ET'), {
+    Type: 'XObject', Subtype: 'Form', BBox: ctx.obj([0, 0, 300, 120]),
+    Resources: ctx.obj({ Font: ctx.obj({ F1: unusable }) }), // same name, other font
+  }));
+  page.node.set(PDFName.of('Resources'), ctx.obj({
+    Font: ctx.obj({ F1: helv.ref }),
+    XObject: ctx.obj({ X0: form }),
+  }));
+  page.node.set(PDFName.of('Contents'), ctx.register(ctx.flateStream(
+    bytes('BT /F1 12 Tf 20 60 Td (PAGE) Tj ET\nq /X0 Do Q'),
+  )));
+
+  const loaded = await PDFDocument.load(await doc.save());
+  const { bytes: out, failed } = await applyEdits(loaded, [
+    { id: 'page', pageIndex: 0, from: 'PAGE', to: 'PGE' },
+    { id: 'form', pageIndex: 0, from: 'FORM', to: 'FIRM' },
+  ]);
+
+  // the page run uses a font we understand, so it is rewritten
+  assert.ok(!failed.includes('page'), 'page run should be editable');
+  // the XObject run does not, so it must be refused rather than mis-encoded
+  assert.deepEqual(failed, ['form']);
+
+  const text = Buffer.from(out).toString('latin1');
+  assert.ok(!/FIRM/.test(text), 'must not have written into the unusable font');
 });

@@ -391,8 +391,16 @@ function showOps(bytes, resources, mapCache) {
   let operands = [];
   const stack = [];
 
+  // Cached per Resources dictionary, not per name: /F1 in a Form XObject's own
+  // resources is a different font from /F1 on the page, and reusing one map for
+  // both would encode a replacement with the wrong character codes.
   const mapFor = (name) => {
-    if (!mapCache.has(name)) {
+    let cache = mapCache.get(resources);
+    if (!cache) {
+      cache = new Map();
+      mapCache.set(resources, cache);
+    }
+    if (!cache.has(name)) {
       const fonts = resources?.lookupMaybe?.(PDFName.of("Font"), PDFDict);
       let dict = null;
       try {
@@ -400,9 +408,9 @@ function showOps(bytes, resources, mapCache) {
       } catch {
         dict = null;
       }
-      mapCache.set(name, dict ? buildMap(dict) : null);
+      cache.set(name, dict ? buildMap(dict) : null);
     }
-    return mapCache.get(name);
+    return cache.get(name);
   };
 
   for (const tk of toks) {
@@ -703,7 +711,7 @@ export async function applyEdits(doc, edits) {
       continue;
     }
     const units = streamUnits(page);
-    const mapCache = new Map();
+    const mapCache = new Map(); // Resources dict -> (font name -> char map)
     const parsed = units.map((u) => ({
       ...u,
       ops: showOps(u.bytes, u.resources, mapCache),
