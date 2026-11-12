@@ -8,10 +8,28 @@ desktop app. Everything happens on your machine — no upload, no server.
 
 Installers for macOS, Windows and Linux are attached to each
 [release](https://github.com/abdulsalamdeveloper1999/pdf-editor-free/releases).
+The macOS build is universal — one file for both Intel and Apple silicon.
 
-They are **not code-signed**. macOS will say the app is from an unidentified
-developer — right-click the app and choose Open the first time. Windows
-SmartScreen will warn — choose More info, then Run anyway.
+The builds are signed ad-hoc but **not notarized**, so your system warns the
+first time you open one.
+
+**macOS** says "Apple could not verify ... is free of malware". Open **System
+Settings → Privacy & Security**, scroll to **Security**, and click **Open
+Anyway** next to the app's name, then confirm. (Control-clicking the app and
+choosing Open no longer works — Apple removed that bypass in macOS 15.) From a
+terminal the equivalent is:
+
+```bash
+xattr -dr com.apple.quarantine "/Applications/PDF Editor Free.app"
+```
+
+**Windows** SmartScreen says "Windows protected your PC" — choose **More info**,
+then **Run anyway**.
+
+**Linux** — make the AppImage executable first: `chmod +x PDF-Editor-Free-*.AppImage`
+
+Notarizing (macOS) and signing (Windows) would remove these warnings, but both
+need paid developer accounts.
 
 ## Development
 

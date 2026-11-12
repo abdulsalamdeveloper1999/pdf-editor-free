@@ -51,8 +51,9 @@ jobs:
         run: npx electron-builder --publish ${{ startsWith(github.ref, 'refs/tags/') && 'always' || 'never' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # no signing certificates are configured; without this electron-builder
-          # tries to discover one and fails the macOS build
+          # there is no Developer ID certificate to find; mac.identity is "-",
+          # which signs ad-hoc instead. Without this electron-builder hunts the
+          # keychain and fails the macOS build.
           CSC_IDENTITY_AUTO_DISCOVERY: false
 
       - uses: actions/upload-artifact@v4
